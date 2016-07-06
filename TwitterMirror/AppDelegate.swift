@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import BDBOAuth1Manager
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -40,7 +41,42 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationWillTerminate(application: UIApplication) {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
+    
+    func application(application: UIApplication, handleOpenURL url: NSURL) -> Bool {
+        print(url.description)
+        
+        let requestToken = BDBOAuth1Credential(queryString: url.query)
+        
+        let twitterClient = BDBOAuth1SessionManager(baseURL: NSURL(string: "https://api.twitter.com/"), consumerKey: 	"CpFxCpe3GkyqzbS8VFY239p1U", consumerSecret: 	"UzBr9MYF5gBOFnM0ls42PXV9CCubfclsEwcEFISjcwtfQ5oamC")
+        twitterClient.fetchAccessTokenWithPath("oauth/access_token", method: "POST", requestToken: requestToken, success: { (requestToken: BDBOAuth1Credential!)-> Void in
+            print("I got the access token")
+        
+            
+            twitterClient.GET("1.1/account/verify_credentials.json", parameters: nil, progress: nil, success: { (task: NSURLSessionDataTask,response: AnyObject?)-> Void in
+                
+                let user = response as! NSDictionary
+                
+                print("name: \(user["name"]!)")
+                
+                }, failure: { (task: NSURLSessionDataTask?, error: NSError)-> Void in
+                    
+            })
+            
+            twitterClient.GET("1.1/statuses/user_timeline.json", parameters: nil, progress: nil, success: { (task: NSURLSessionDataTask,response: AnyObject?) in
+                
+                let tweets = response as! [NSDictionary]
+                for tweet in tweets{
+                print("\(tweet["text"]!)")
+                }
+            }, failure: { (task: NSURLSessionDataTask?,error: NSError) in
+                    
+            })
+            
+        }) { (error: NSError!)-> Void in
+                print("error type: \(error.localizedDescription)")
+        }
 
-
+        return true
 }
 
+}
